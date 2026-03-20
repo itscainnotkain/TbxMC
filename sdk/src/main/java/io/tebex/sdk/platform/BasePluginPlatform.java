@@ -47,9 +47,9 @@ public abstract class BasePluginPlatform implements PluginPlatform {
     private final AtomicBoolean commandCheckInProgress = new AtomicBoolean(false);
 
     /**
-     * Checks if the configured store is Geyser/Offline
+     * Checks if the configured store is a Geyser-compatible webstore.
      *
-     * @return Whether the store is an Offline/Geyser-type webstore
+     * @return Whether the connected store type is a Geyser project/store
      */
     public final boolean isGeyser() {
         if (!isSetup()) return false;
@@ -58,7 +58,7 @@ public abstract class BasePluginPlatform implements PluginPlatform {
             return false;
         }
 
-        return getStoreType().contains("Offline/Geyser");
+        return getStoreType().toLowerCase(Locale.ROOT).contains("geyser");
     }
 
     public final void initStore() {
@@ -186,7 +186,9 @@ public abstract class BasePluginPlatform implements PluginPlatform {
             return;
         }
 
-        getSDK().getOnlineCommands(player).thenAccept(onlineCommands -> {
+        QueuedPlayer resolvedPlayer = resolveOnlineQueuedPlayer(playerId, player);
+
+        getSDK().getOnlineCommands(resolvedPlayer).thenAccept(onlineCommands -> {
             if(onlineCommands.isEmpty()) {
                 debug("No commands found for " + player.getName() + ".");
                 return;
@@ -200,6 +202,15 @@ public abstract class BasePluginPlatform implements PluginPlatform {
         });
     }
 
+    QueuedPlayer resolveOnlineQueuedPlayer(Object playerId, QueuedPlayer player) {
+        UUID liveUuid = UUIDUtil.extractUuid(getPlayer(playerId));
+        if (UUIDUtil.EMPTY_UUID.equals(liveUuid)) {
+            return player;
+        }
+
+        return player.withUuid(liveUuid.toString());
+    }
+
     /**
      * Selects the appropriate player ID for a player based on platform configuration.
      * @param name The name of the player.
@@ -208,7 +219,7 @@ public abstract class BasePluginPlatform implements PluginPlatform {
      */
     @NotNull
     public final Object getPlayerId(String name, UUID uuid) {
-        // Geyser/offline stores and missing UUIDs must use usernames for consistent matching.
+        // Geyser stores and missing UUIDs must use usernames for consistent matching.
         boolean useUuid = isOnlineMode() && !isGeyser() && uuid != null && !UUIDUtil.EMPTY_UUID.equals(uuid);
         if (useUuid) {
             return uuid;

@@ -65,4 +65,42 @@ class QueuedCommandTest {
 
         assertEquals("lp user 12345678-1234-1234-1234-1234567890ab parent add default", parsed);
     }
+
+    @Test
+    void numericOnlyMojangUuidsStillParseAsUuids() {
+        QueuedPlayer onlinePlayer = new QueuedPlayer(4, "Steve", "12345678123412341234123456789012");
+        QueuedCommand command = new QueuedCommand(
+                13,
+                "lp user {id} parent add default",
+                0,
+                0,
+                0,
+                0,
+                onlinePlayer,
+                true
+        );
+
+        String parsed = command.getParsedCommand();
+
+        assertEquals("lp user 12345678-1234-1234-1234-123456789012 parent add default", parsed);
+    }
+
+    @Test
+    void bedrockPlayersConvertXuidToFloodgateUuid() {
+        QueuedPlayer bedrockPlayer = new QueuedPlayer(4, "BedrockSteve", "12345");
+        QueuedCommand command = new QueuedCommand(
+                14,
+                "lp user {id} meta setplatform bedrock",
+                0,
+                0,
+                0,
+                0,
+                bedrockPlayer,
+                true
+        );
+
+        String parsed = command.getParsedCommand();
+
+        assertEquals("lp user 00000000-0000-0000-0000-000000003039 meta setplatform bedrock", parsed);
+    }
 }
