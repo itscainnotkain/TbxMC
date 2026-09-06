@@ -1,0 +1,31 @@
+name: Build and verify
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  migration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: gradle/actions/setup-gradle@v4
+      - run: bash ./gradlew verifyMigration --max-workers=2 --no-parallel --console=plain
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: verification-reports
+          path: |
+            minecraft-common/build/reports/tests/
+            tebex-java-sdk/tbx/build/reports/tests/
+            tebex-java-sdk/headless-api/build/reports/tests/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tebex-plugins
+          path: builds/*.jar

@@ -38,7 +38,7 @@ dependencies {
     implementation minecraft.dependency("net.minecraftforge:forge:${minecraft_version}-${forge_version}")
     annotationProcessor 'net.minecraftforge:eventbus-validator:7.0.1'
 
-    shadow project(':sdk')
+    shadow project(':minecraft-common')
     compileOnly 'dev.dejvokep:boosted-yaml:1.3'
 }
 
@@ -66,13 +66,6 @@ tasks.named('processResources', ProcessResources) {
 tasks.named('shadowJar', ShadowJar) {
     configurations = [project.configurations.shadow]
 
-    relocate 'okhttp3', 'io.tebex.plugin.libs.okhttp3'
-    relocate 'okio', 'io.tebex.plugin.libs.okio'
-    relocate 'dev.dejvokep.boostedyaml', 'io.tebex.plugin.libs.boostedyaml'
-    relocate 'org.jetbrains.annotations', 'io.tebex.plugin.libs.jetbrains'
-    relocate 'kotlin', 'io.tebex.plugin.libs.kotlin'
-    relocate 'com.google.gson', 'io.tebex.plugin.libs.gson'
-    minimize()
 }
 
 tasks.named('jar') {

@@ -1,71 +1,61 @@
 package io.tebex.plugin;
 
-import io.tebex.sdk.commands.Context;
-import io.tebex.sdk.commands.Responder;
-import io.tebex.sdk.commands.TebexCommands;
+import io.tebex.minecraft.commands.Context;
+import java.util.*;
+import java.util.stream.Collectors;
 import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.plugin.Command;
+import net.md_5.bungee.api.plugin.TabExecutor;
 
-import java.util.UUID;
+/** Bungee input/reply adapter for the shared registry. */
+public final class TebexCommandExecutor extends Command implements TabExecutor {
+  private final BungeePluginPlatform platform;
 
-public class TebexCommandExecutor extends Command {
-    private final BungeePluginPlatform platform;
-    public TebexCommandExecutor(BungeePluginPlatform platform) {
-        super("tebex");
-        this.platform = platform;
-    }
+  public TebexCommandExecutor(BungeePluginPlatform platform) {
+    super("tebex");
+    this.platform = platform;
+  }
 
-    @Override
-    public void execute(CommandSender sender, String[] args) {
-        String commandName = args[0];
+  @Override
+  public void execute(CommandSender sender, String[] input) {
+    String[] args = input.length == 0 ? new String[] {"help"} : input;
+    ProxiedPlayer player = sender instanceof ProxiedPlayer ? (ProxiedPlayer) sender : null;
+    Context context =
+        Context.from(
+            player == null,
+            sender.getName(),
+            player == null ? null : player.getUniqueId(),
+            "tebex " + args[0],
+            "",
+            null,
+            args);
+    platform
+        .getCommands()
+        .process(
+            context,
+            future ->
+                future.thenAccept(
+                    lines -> {
+                      if (!platform.isStopped())
+                        for (String line : lines)
+                          sender.sendMessage(TextComponent.fromLegacyText(line));
+                    }));
+  }
 
-        // Identify sender information
-        String senderName = sender.getName();
-        UUID senderUUID = null;
-        if (sender instanceof ProxiedPlayer) {
-            senderUUID = ((ProxiedPlayer) sender).getUniqueId();
-        }
-
-        // Identify any player targets
-        String targetName = "";
-        UUID targetUUID = new UUID(0L,0L);
-
-        // Build the full command and list of arguments, checking if any of the args is a player.
-        StringBuilder fullCommand = new StringBuilder(commandName);
-        for (String arg : args) {
-            // Assign the target player if we find their username in the args list
-            if (targetName.isEmpty()) {
-                ProxiedPlayer targetPlayer = platform.getPlayer(arg);
-                if (targetPlayer != null) {
-                    targetName = targetPlayer.getName();
-                    targetUUID = targetPlayer.getUniqueId();
-                }
-            }
-
-            // Build the full command by appending the arg to the base command
-            fullCommand.append(" ").append(arg);
-        }
-
-        // Build the command context with the information we have so far for responding.
-        Context context = Context.from(false, senderName, senderUUID, fullCommand.toString(), targetName, targetUUID, args);
-
-        // Show splash for no args /tebex command
-        if (args.length == 1 && sender.hasPermission("tebex.tebex")) {
-            sender.sendMessage(TextComponent.fromLegacyText(Responder.formatFancy(context, "Welcome to Tebex!")));
-            sender.sendMessage(TextComponent.fromLegacyText(Responder.formatFancy(context,"This server is running version {0}", "v" + platform.getPluginVersion())));
-            return;
-        }
-
-        // Pass context to the command handler, but respond via command sender so it's sent through the appropriate
-        // channels (RCON, Console, Player).
-        TebexCommands.process(context, (future) -> {
-            future.thenAccept((responseArr) -> {
-                for (String message : responseArr) {
-                    sender.sendMessage(TextComponent.fromLegacyText(message));
-                }
-            });
-        });
-    }
+  @Override
+  public Iterable<String> onTabComplete(CommandSender sender, String[] args) {
+    if (args.length > 1) return Collections.emptyList();
+    String prefix = args.length == 0 ? "" : args[0].toLowerCase(Locale.ROOT);
+    return platform.getCommands().getCommands().values().stream()
+        .filter(
+            command ->
+                !(sender instanceof ProxiedPlayer)
+                    || sender.hasPermission(command.getPermission())
+                    || sender.hasPermission("tebex.admin"))
+        .map(command -> command.getCommandName())
+        .filter(name -> name.startsWith(prefix))
+        .collect(Collectors.toList());
+  }
 }

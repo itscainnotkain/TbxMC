@@ -14,8 +14,7 @@ sourceSets {
 }
 
 dependencies {
-    implementation(project(":sdk"))
-    implementation("net.sf.trove4j:trove4j:3.0.3") // Add trove4j dependency
+    implementation(project(":minecraft-common"))
 
     compileOnly("com.velocitypowered:velocity-api:3.3.0-SNAPSHOT")
     annotationProcessor("com.velocitypowered:velocity-api:3.3.0-SNAPSHOT")
@@ -30,14 +29,6 @@ tasks {
     shadowJar {
         configurations = listOf(project.configurations.runtimeClasspath.get())
 
-        relocate("gnu.trove4j", "io.tebex.plugin.libs.trove4j") // Relocate trove4j
-        relocate("okhttp3", "io.tebex.plugin.libs.okhttp3") // Relocate okhttp
-        relocate("okio", "io.tebex.plugin.libs.okio") // Relocate okio (okhttp dependency)
-        relocate("dev.dejvokep.boostedyaml", "io.tebex.plugin.libs.boostedyaml") // Relocate boostedyaml
-        relocate("org.jetbrains.annotations", "io.tebex.plugin.libs.jetbrains") // Relocate jetbrains
-        relocate("kotlin", "io.tebex.plugin.libs.kotlin") // Relocate jetbrains
-        relocate("com.google.gson", "io.tebex.plugin.libs.gson") // Relocate gson
-        minimize()
     }
 }
 

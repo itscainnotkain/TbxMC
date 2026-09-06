@@ -25,9 +25,12 @@ plugins {
 }
 
 rootProject.name = "TebexPlugin"
+// Substitute published SDK coordinates with the pinned, unchanged submodule.
+includeBuild("tebex-java-sdk")
 
 listOf(
-    "sdk",
+    "minecraft-common",
+    "bukkit-common",
     "bukkit",
     "bungeecord",
     "velocity",

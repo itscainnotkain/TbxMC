@@ -1,50 +1,34 @@
 package io.tebex.plugin.manager;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Maps;
 import com.velocitypowered.api.command.CommandMeta;
-import com.velocitypowered.api.command.SimpleCommand;
 import io.tebex.plugin.TebexVelocityPlugin;
-import io.tebex.plugin.command.SubCommand;
 import io.tebex.plugin.command.TebexCommand;
-import io.tebex.plugin.command.sub.*;
 
-import java.util.Map;
+/** Native registration only; command metadata and handlers live in minecraft-common. */
+public final class CommandManager {
+  private final TebexVelocityPlugin platform;
 
-public class CommandManager {
-    private final TebexVelocityPlugin platform;
-    private final Map<String, SubCommand> commands;
+  public CommandManager(TebexVelocityPlugin platform) {
+    this.platform = platform;
+  }
 
-    public CommandManager(TebexVelocityPlugin platform) {
-        this.platform = platform;
-        this.commands = Maps.newHashMap();
-    }
+  public void register() {
+    platform.getCommands().useOptionalBanArguments();
+    platform
+        .getCommands()
+        .setRestrictedToCommands("secret", "reload", "forcecheck", "help", "ban", "debug");
+    CommandMeta meta =
+        platform
+            .getProxy()
+            .getCommandManager()
+            .metaBuilder("tebex")
+            .aliases("tbx", "buycraft")
+            .plugin(platform)
+            .build();
+    platform.getProxy().getCommandManager().register(meta, new TebexCommand(this));
+  }
 
-    public void register() {
-        ImmutableList.of(
-                new SecretCommand(platform),
-                new ReloadCommand(platform),
-                new ForceCheckCommand(platform),
-                new HelpCommand(platform, this),
-                new BanCommand(platform),
-                new DebugCommand(platform)
-        ).forEach(command -> commands.put(command.getName(), command));
-
-        SimpleCommand tebexCommand = new TebexCommand(this);
-        com.velocitypowered.api.command.CommandManager commandManager = platform.getProxy().getCommandManager();
-        CommandMeta commandMeta = commandManager.metaBuilder("tebex")
-                .aliases("tbx", "buycraft")
-                .plugin(platform)
-                .build();
-
-        platform.getProxy().getCommandManager().register(commandMeta, tebexCommand);
-    }
-
-    public Map<String, SubCommand> getCommands() {
-        return commands;
-    }
-
-    public TebexVelocityPlugin getPlatform() {
-        return platform;
-    }
+  public TebexVelocityPlugin getPlatform() {
+    return platform;
+  }
 }
