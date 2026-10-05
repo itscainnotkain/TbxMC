@@ -5,13 +5,12 @@ import static net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializ
 import com.velocitypowered.api.command.SimpleCommand;
 import com.velocitypowered.api.proxy.Player;
 import io.tebex.minecraft.commands.Context;
-import io.tebex.plugin.TebexVelocityPlugin;
-import io.tebex.plugin.manager.CommandManager;
+import io.tebex.plugin.VelocityPlatform;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public final class TebexCommand implements SimpleCommand {
-  private final TebexVelocityPlugin platform;
+  private final VelocityPlatform platform;
 
   public TebexCommand(CommandManager manager) {
     platform = manager.getPlatform();
@@ -31,13 +30,14 @@ public final class TebexCommand implements SimpleCommand {
             null,
             args);
     platform
+        .runtime()
         .getCommands()
         .process(
             ctx,
             future ->
                 future.thenAccept(
                     lines -> {
-                      if (!platform.isStopped())
+                      if (!platform.runtime().isStopped())
                         for (String line : lines)
                           invocation.source().sendMessage(legacySection().deserialize(line));
                     }));
@@ -47,7 +47,7 @@ public final class TebexCommand implements SimpleCommand {
     String[] args = invocation.arguments();
     if (args.length > 1) return Collections.emptyList();
     String prefix = args.length == 0 ? "" : args[0].toLowerCase(Locale.ROOT);
-    return platform.getCommands().getCommands().values().stream()
+    return platform.runtime().getCommands().getCommands().values().stream()
         .filter(
             c ->
                 invocation.source().hasPermission(c.getPermission())

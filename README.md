@@ -1,6 +1,7 @@
-![Logo](https://www.tebex.io/assets/img/logos/tebex.svg#gh-light-mode-only)
-![Static Badge](https://img.shields.io/badge/spigot-1.8--1.20-brightgreen)
+![Logo](https://www.tebex.io/_nuxt/logo.BCN2mLkL.svg)
+![Static Badge](https://img.shields.io/badge/spigot-1.8--26.2-brightgreen)
 ![Static Badge](https://img.shields.io/badge/fabric-1.16.5+-brightgreen)
+![Static Badge](https://img.shields.io/badge/forge-1.20.1+-brightgreen)
 ![Static Badge](https://img.shields.io/badge/neoforge-26.1+-brightgreen)
 ![Static Badge](https://img.shields.io/badge/bungeecord-1.18+-brightgreen)
 ![Static Badge](https://img.shields.io/badge/waterfall-1.18+-brightgreen)
@@ -23,16 +24,16 @@ See an interactive Tebex store using one of our free templates at https://exampl
 ## Installation and Setup
 1. Create a free webstore at https://tebex.io/
 2. Download the latest version of the plugin from the Releases tab of this repository.
-3. Place the downloaded Tebex `.jar` in the `plugins` folder for plugin platforms, or the `mods` folder for Fabric, Forge and NeoForge.
+3. Place the downloaded Tebex `.jar` in the `plugins` folder for plugin platforms, or the `mods` folder for Fabric and NeoForge.
 4. Restart your server / reload your plugins
-5. Run `/tebex secret your-key-here` as a server admin to connect the server to Tebex.
+5. Run `tebex.secret your-key-here` as a server admin to connect the server to Tebex.
 
 Your secret key can always be found at: https://creator.tebex.io/game-servers. Click Connect Game Server, and then choose Plugin to view your secret key.
 
 ## Usage and Commands
 Tebex will automatically fulfill any orders from your webstore every two minutes. These are run as server commands, such as giving items or adding groups, which you can define in your store.
 
-Note: Not all commands are available on all platforms. Proxy servers may have a reduced set of commands. Use `/tebex help` to get the relevant list of commands on any platform.
+Note: Not all commands are available on all platforms. Proxy servers may have a reduced set of commands. Use `tebex.help` to get the relevant list of commands on any platform.
 
 Below are a list of commands used to manage the plugin:
 
@@ -42,24 +43,25 @@ commands.
 
 ### User Commands
 ```
-tebex help                          Shows available commands
-tebex secret <key>                  Sets your store’s secret key
-tebex info                          Shows store information
-tebex checkout <packageId>  Creates payment link for a package
+tebex.help                          Shows available commands
+tebex.secret <key>                  Sets your store’s secret key
+tebex.info                          Shows store information
+tebex.checkout <packId> <username>  Creates payment link for a package
 ```
 
 ### Administrator Commands
 ```
-tebex sendlink <packageId> <username>	    Sends payment link to player
-tebex ban <name> <reason> <ip>		    Bans a user from the webstore
-tebex lookup <name>		    Looks up user transaction info
+tebex.sendlink <name> <package>	    Sends payment link to player
+tebex.report <message>		    Reports a problem to Tebex
+tebex.ban <name>		    Bans a user from the webstore
+tebex.lookup <name>		    Looks up user transaction info
 ```
 
 ### Debug Commands
 ```
-tebex debug <true/false>    Enables debug logging
-tebex forcecheck            Checks immediately for purchases
-tebex reload               Reloads store and package info
+tebex.debug <true/false>    Enables debug logging
+tebex.forcecheck            Force runs all time-based events
+tebex.refresh               Reloads store and package info
 ```
 
 ## Resources
@@ -72,40 +74,15 @@ Here are some additional resources to help you build your Tebex store.
 - 💬 [Feedback Form](https://wkf.ms/45PQwfE) - Help us build a better product by sharing your feedback
 
 ## Developer Resources
-
-The SDK migration is tracked in [SDK-MIGRATION-PLAN.md](SDK-MIGRATION-PLAN.md).
 All of our plugins are open source and welcome contributions from the community. If you wish to make a contribution, please review **CONTRIBUTING.md** for guidelines
 and things to know before making your contribution.
 
-### Architecture
-
-- `tebex-java-sdk` is an unchanged, pinned Git submodule, consumed through Gradle's composite-build dependency substitution.
-- `minecraft-common` owns credentials/lifecycle, delivery coordination, identity resolution, commands and shop presentation. It uses the SDK's clients, models and exceptions directly.
-- `bukkit-common` shares Bukkit/Folia commands, GUI and configuration import. Folia overrides scheduling for global and player ownership.
-- The 12 platform modules contain native bindings, permissions and loader-specific rendering/build transforms. Shared code targets Java 8; native adapters retain their platform Java targets.
-- The old `io.tebex.sdk` Java API has been removed. This is a source/binary breaking change for integrations using it. Server configuration keys and plugin entry points remain supported.
-
-The SDK's TXE engine is intentionally not started: Minecraft needs contextual delayed dispatch, inventory checks and Floodgate resolution. The shared coordinator uses SDK API operations directly. Acknowledgements retry without redispatch during the same connection, including same-key reloads. State is in memory; crashes/restarts do not provide exactly-once delivery.
-
 ### Environment Requirements
+- JDK 17
+- Gradle 8.2
 
-Use JDK 25 and the checked-in Gradle 9.4.1 wrapper. Gradle resolves Java 8/17/21/25 toolchains as needed; the first build requires network access to download dependencies and toolchains.
-
-### Building and verification
-
-Initialize the pinned SDK before building:
-
-```sh
-git submodule update --init --recursive
-./gradlew collectBuilds
-./gradlew verifyMigration --max-workers=2 --no-parallel
-```
-
-On Windows use `gradlew.bat`. Distributable JARs for all 12 platforms go to `builds/`; the common modules are libraries, not server plugins. `build.sh` wraps `collectBuilds` and `test.sh` wraps `verifyMigration`.
-
-`verifyMigration` runs common runtime tests, both included SDK test suites, and packaged dependency/descriptor/bytecode checks. Tests use local fixtures and no production credentials. For constrained machines, add `--max-workers=1 --no-parallel "-Dorg.gradle.jvmargs=-Xmx2G"`. CI checks out the submodule recursively and runs the same verification task.
-
-Actual server startup, gameplay, Folia ownership and GUI smoke checks are tracked separately in [SDK-MIGRATION-PLAN.md](SDK-MIGRATION-PLAN.md); a successful build does not imply those checks passed.
+### Building
+To build all plugins, simply run `./build.sh`. This will execute the Gradle wrapper, build all plugins, and place their `.jar` files in in `build/libs/`
 
 ## Our Mission
 Founded in 2011, our mission has always been the same: helping creators in the gaming industry create new revenue streams without having to invest the time and effort involved in processing and managing global payments.

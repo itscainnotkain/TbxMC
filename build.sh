@@ -1,4 +1,4 @@
 #!/bin/bash
 set -euo pipefail
 cd "$(dirname "$0")"
-exec ./gradlew collectBuilds "$@"
+exec ./gradlew build "$@"

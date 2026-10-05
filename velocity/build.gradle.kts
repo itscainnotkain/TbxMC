@@ -3,6 +3,12 @@ plugins {
     id("org.jetbrains.gradle.plugin.idea-ext") version "1.1.7"
 }
 
+spotless {
+    java {
+        targetExclude("build/generated/sources/blossom/**")
+    }
+}
+
 sourceSets {
     main {
         blossom {
@@ -14,9 +20,11 @@ sourceSets {
 }
 
 dependencies {
-    implementation(project(":minecraft-common"))
+    implementation(project(":tebex-minecraft-runtime"))
+    implementation("io.tebex:tbx:3.0.0")
 
     compileOnly("com.velocitypowered:velocity-api:3.3.0-SNAPSHOT")
+    testImplementation("com.velocitypowered:velocity-api:3.3.0-SNAPSHOT")
     annotationProcessor("com.velocitypowered:velocity-api:3.3.0-SNAPSHOT")
     compileOnly("dev.dejvokep:boosted-yaml:1.3")
 }
@@ -32,4 +40,8 @@ tasks {
     }
 }
 
-java.toolchain.languageVersion.set(JavaLanguageVersion.of(17))
+java {
+    toolchain.languageVersion.set(JavaLanguageVersion.of(17))
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
