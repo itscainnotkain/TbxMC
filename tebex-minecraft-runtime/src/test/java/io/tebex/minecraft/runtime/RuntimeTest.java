@@ -112,6 +112,29 @@ class RuntimeTest {
   }
 
   @Test
+  void blankQueuedCommandsAreReportedAndLeftUnacknowledged() {
+    host.connect("good", false).join();
+    QueuedCommand blank = queuedCommand(21, "   ", 456, 123);
+    QueuedCommand missing = queuedCommand(22, null, 0, 0);
+    host.api.commands = Arrays.asList(blank, missing);
+
+    host.checkCommandQueue().join();
+    host.tickSafely();
+    host.tickSafely();
+
+    assertTrue(host.executed.isEmpty());
+    assertTrue(host.api.deleted.isEmpty());
+    assertTrue(
+        host.logs.stream()
+            .anyMatch(
+                message ->
+                    message.contains("Command #21")
+                        && message.contains("Package: 123")
+                        && message.contains("payments/456")));
+    assertTrue(host.logs.stream().anyMatch(message -> message.contains("Command #22")));
+  }
+
+  @Test
   void pendingDeliveryIsDiscardedOnConnectionChange() {
     host.connect("good", false).join();
     host.api.commands = Arrays.asList(command(1, 10, true, 0));
@@ -255,6 +278,23 @@ class RuntimeTest {
             QueuedCommand.class);
     if (online) command.bindOnlinePlayer(due().getPlayers().get(0));
     return command;
+  }
+
+  private static QueuedCommand queuedCommand(int id, String command, int payment, int packageId) {
+    QueuedCommand queued =
+        GSON.fromJson(
+            "{\"id\":"
+                + id
+                + ",\"command\":"
+                + GSON.toJson(command)
+                + ",\"payment\":"
+                + payment
+                + ",\"package\":"
+                + packageId
+                + ",\"player\":{\"id\":1,\"name\":\"Steve\",\"uuid\":\"123456781234123412341234567890ab\"}}",
+            QueuedCommand.class);
+    queued.bindOnlinePlayer(due().getPlayers().get(0));
+    return queued;
   }
 
   static final class Host extends MockPluginPlatform {

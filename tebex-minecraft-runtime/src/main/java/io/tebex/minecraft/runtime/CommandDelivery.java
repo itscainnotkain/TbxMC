@@ -131,11 +131,29 @@ final class CommandDelivery {
   private CompletableFuture<Boolean> deliver(SdkSession connection, QueuedCommand command) {
     if (!runtime.isCurrent(connection)) return CompletableFuture.completedFuture(false);
     QueuedPlayer player = command.getPlayer();
+    String playerName = player == null ? "unknown" : player.getName();
     Object id =
         player == null
             ? ""
             : runtime.playerId(player.getName(), PlayerIdentity.uuid(player.getUuid()));
-    String parsed = PlayerIdentity.command(command, runtime);
+    String raw = command.getCommand();
+    String parsed =
+        raw == null || raw.trim().isEmpty() ? raw : PlayerIdentity.command(command, runtime);
+    if (parsed == null || parsed.trim().isEmpty()) {
+      StringBuilder message =
+          new StringBuilder(
+              String.format(
+                  "Command #%d for player '%s' is blank and cannot be executed. Check the commands configured on this package in your webstore.",
+                  command.getId(), playerName));
+      if (command.getPackageId() != 0)
+        message.append(" Package: ").append(command.getPackageId()).append('.');
+      if (command.getPaymentId() != 0)
+        message
+            .append(" Payment: https://creator.tebex.io/payments/")
+            .append(command.getPaymentId());
+      runtime.error(message.toString());
+      return CompletableFuture.completedFuture(false);
+    }
     CompletableFuture<Boolean> eligible =
         command.isOnline()
             ? runtime.callPlayer(
